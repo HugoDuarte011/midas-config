@@ -1,0 +1,60 @@
+# config.yaml
+
+# API Configuration
+api:
+  key: "your_api_key_here"
+  secret: "your_api_secret_here"
+
+# Trading Pairs
+tradingPairs:
+  - "BTCUSDT"
+  - "ETHUSDT"
+  # Adicione mais pares conforme necessário
+
+# Timeframes
+timeframes:
+  - "1m"
+  - "3m"
+  - "5m"
+  - "15m"
+  - "1h"
+  - "4h"
+  - "1d"
+  # Adicione mais intervalos conforme necessário
+
+# Indicators Configuration
+indicators:
+  movingAverages:
+    periods:
+      - 12
+      - 26
+      - 100
+      - 200
+  macd:
+    fastPeriod: 12
+    slowPeriod: 26
+    signalPeriod: 9
+  rsi:
+    period: 14
+  bollingerBands:
+    period: 20
+    stdDev: 2
+
+# Risk Management
+riskManagement:
+  initialRiskPerTrade: 0.1  # 10% da banca
+  stopLossPercentage: 0.1    # 10% da operação
+  riscoLucroThreshold: 0.01  # 1% da banca
+
+# Database Configuration
+database:
+  host: "localhost"
+  port: 5432
+  user: "your_db_user"
+  password: "your_db_password"
+  name: "trading_db"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "trading_bot.log"

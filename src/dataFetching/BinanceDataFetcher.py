@@ -2,39 +2,33 @@ import requests
 import pandas as pd
 
 class BinanceDataFetcher:
-    def __init__(self, symbols, intervals, limit=250):
-        self.symbols = symbols
-        self.intervals = intervals
-        self.limit = limit
-        self.data = {}
+    BASE_URL = "https://api.binance.com"
 
-    def fetch_data(self):
-        base_url = 'https://api.binance.com/api/v3/klines'
-        for symbol in self.symbols:
-            self.data[symbol] = {}
-            for interval in self.intervals:
-                params = {
-                    'symbol': symbol,
-                    'interval': interval,
-                    'limit': self.limit
-                }
-                response = requests.get(base_url, params=params)
-                if response.status_code == 200:
-                    data = response.json()
-                    df = pd.DataFrame(data, columns=[
-                        'timestamp', 'open', 'high', 'low', 'close', 'volume',
-                        'close_time', 'quote_asset_volume', 'number_of_trades',
-                        'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
-                    ])
-                    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-                    df['open'] = df['open'].astype(float)
-                    df['high'] = df['high'].astype(float)
-                    df['low'] = df['low'].astype(float)
-                    df['close'] = df['close'].astype(float)
-                    df['volume'] = df['volume'].astype(float)
-                    self.data[symbol][interval] = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
-                else:
-                    print(f"Erro ao obter dados para {symbol} no intervalo {interval}: {response.status_code}")
+    def __init__(self, symbol, interval):
+        self.symbol = symbol
+        self.interval = interval
 
-    def get_data(self):
-        return self.data
+    def fetchKlines(self, limit=100):
+        url = f"{self.BASE_URL}/api/v3/klines"
+        params = {
+            'symbol': self.symbol,
+            'interval': self.interval,
+            'limit': limit
+        }
+        response = requests.get(url, params=params)
+        data = response.json()
+        df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'closeTime', 'quoteAssetVolume', 'numberOfTrades', 'takerBuyBaseAssetVolume', 'takerBuyQuoteAssetVolume', 'ignore'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+
+        # Convert relevant columns to numeric types
+        numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'quoteAssetVolume', 'numberOfTrades', 'takerBuyBaseAssetVolume', 'takerBuyQuoteAssetVolume']
+        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce')
+
+        return df
+
+# Example usage
+# fetcher = BinanceDataFetcher('BTCUSDT', '1h')
+# data = fetcher.fetchKlines()
+# pd.set_option('display.max_columns', None)
+# print(data.head())
