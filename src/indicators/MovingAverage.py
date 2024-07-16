@@ -1,8 +1,7 @@
 import pandas as pd
-import time
 
 # Importar a nova classe BinanceDataFetcher
-from BinanceDataFetcher import BinanceDataFetcher
+from src.dataFetching.BinanceDataFetcher import BinanceDataFetcher
 
 # Configurações de exibição do pandas
 pd.set_option('display.max_columns', None)

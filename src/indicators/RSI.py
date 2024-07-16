@@ -1,32 +1,11 @@
-import requests
 import pandas as pd
-import numpy as np
 
+# Importar a nova classe BinanceDataFetcher
+from src.dataFetching.BinanceDataFetcher import BinanceDataFetcher
 
-# Função para obter dados históricos de preços da Binance
-def get_historical_klines(symbol, interval, limit=500):
-    base_url = 'https://api.binance.com/api/v3/klines'
-    params = {
-        'symbol': symbol,
-        'interval': interval,
-        'limit': limit
-    }
-    response = requests.get(base_url, params=params)
-    data = response.json()
-
-    # Convertendo os dados para DataFrame
-    df = pd.DataFrame(data, columns=[
-        'timestamp', 'open', 'high', 'low', 'close', 'volume',
-        'close_time', 'quote_asset_volume', 'number_of_trades',
-        'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
-    ])
-
-    # Convertendo o timestamp para datetime e fechando valores como float
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    df['close'] = df['close'].astype(float)
-
-    return df[['timestamp', 'close']]
-
+# Configurações de exibição do pandas
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 1000)
 
 # Função para calcular o RSI usando lógica de média móvel suavizada (SMMA)
 def calculate_rsi(df, period=14):
@@ -50,14 +29,18 @@ def calculate_rsi(df, period=14):
     rsi = 100 - (100 / (1 + rs))
 
     df[f'RSI_{period}'] = rsi
-    return df
 
+    # Identificar sinais de Long e Short
+    df['Signal'] = 'None'
+    df.loc[df[f'RSI_{period}'] < 30, 'Signal'] = 'Long'
+    df.loc[df[f'RSI_{period}'] > 70, 'Signal'] = 'Short'
+
+    return df
 
 # Função para calcular a Média Móvel do RSI
 def calculate_rsi_ma(df, rsi_column, ma_period=14):
     df[f'RSI_MA_{ma_period}'] = df[rsi_column].rolling(window=ma_period).mean()
     return df
-
 
 # Símbolos e intervalos de tempo desejados
 symbols = ['BTCUSDT', 'ETHUSDT']
@@ -65,12 +48,17 @@ intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '12h', '1d', '1w']
 rsi_period = 14  # Período padrão de 14 para o RSI
 rsi_ma_period = 14  # Período padrão de 14 para a MA do RSI
 
+# Criar uma instância da classe BinanceDataFetcher
+fetcher = BinanceDataFetcher(symbols, intervals)
+fetcher.fetch_data()
+data = fetcher.get_data()
+
 # Iterar sobre cada símbolo e intervalo de tempo
 for symbol in symbols:
     print(f"Calculando RSI e MA do RSI para o símbolo: {symbol}")
     for interval in intervals:
         print(f"Intervalo: {interval}")
-        df = get_historical_klines(symbol, interval)
+        df = data[symbol][interval]
 
         # Calcular RSI
         df = calculate_rsi(df, rsi_period)
@@ -78,7 +66,6 @@ for symbol in symbols:
         # Calcular a MA do RSI
         df = calculate_rsi_ma(df, f'RSI_{rsi_period}', rsi_ma_period)
 
-        # Printar os valores do RSI e da MA do RSI
-        print(df[['timestamp', f'RSI_{rsi_period}', f'RSI_MA_{rsi_ma_period}']].tail(
-            5))  # Mostra as últimas 5 entradas para visualização
+        # Printar os valores do RSI, da MA do RSI e dos sinais
+        print(df.tail(5)[['timestamp', f'RSI_{rsi_period}', f'RSI_MA_{rsi_ma_period}', 'Signal']])  # Mostra as últimas 5 entradas para visualização
         print("-" * 50)
